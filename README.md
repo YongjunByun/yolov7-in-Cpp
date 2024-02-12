@@ -43,7 +43,7 @@ drive.mount('/content/drive')
 - 모델 테스트는 생략합니다
 
 ### Step6 - ONNX로 Export
-- **export.py**로 생성된 **.pt*파일을 **.onnx**로 변환합니다.
+- **export.py**로 생성된 **.pt**파일을 **.onnx**로 변환합니다.
 ```python
 python export.py --weights yolov7-tiny.pt --grid --end2end --simplify --include-nms \
         --topk-all 100 --iou-thres 0.65 --conf-thres 0.35 --img-size 640 640 --max-wh 640
