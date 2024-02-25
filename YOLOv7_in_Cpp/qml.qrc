@@ -1,5 +1,0 @@
-<RCC>
-    <qresource prefix="/qt/qml/yolov7_in_cpp">
-        <file>main.qml</file>
-    </qresource>
-</RCC>
