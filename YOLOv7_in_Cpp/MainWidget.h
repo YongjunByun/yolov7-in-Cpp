@@ -7,7 +7,8 @@
 #include <QPushButton>
 #include <QFileDialog>
 #include <QPixmap>
-//#include "ui_MainWidget.h"
+#include "ui_MainWidget.h"
+#include "LoadDnnModel.h"
 
 class MainWidget : public QWidget
 {
@@ -21,7 +22,10 @@ private slots:
     void loadModel();
     void showNextImage();
     void showPreviousImage();
+    
+
 private:
     QLabel* imageLabel;
     QLabel* modelStatusLabel;
+    LoadDnnModel* Model;
 };

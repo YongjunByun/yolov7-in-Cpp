@@ -53,10 +53,12 @@ MainWidget::MainWidget(QWidget* parent)
     connect(nextImageButton, &QPushButton::clicked, this, &MainWidget::showNextImage);
     connect(prevImageButton, &QPushButton::clicked, this, &MainWidget::showPreviousImage);
 
+    Model = new LoadDnnModel();
 }
 
 void MainWidget::loadModel() {
     // 모델 로딩 로직
+    Model->LoadOnnx();
     modelStatusLabel->setText("Model Loaded");
     modelStatusLabel->setStyleSheet("QLabel { color : green; }");
 }
@@ -67,7 +69,12 @@ void MainWidget::loadImage() {
 
     if (!fileName.isEmpty()) {
         // 선택한 이미지 파일을 QLabel에 표시
-        QPixmap pixmap(fileName);
+        string imgpath = fileName.toStdString();
+        Model->SetImgPath(imgpath);
+        Model->Run();
+        cv::Mat resultImage = Model->GetResultImage();
+        QImage qImage(resultImage.data, resultImage.cols, resultImage.rows, int(resultImage.step), QImage::Format_RGB888);
+        QPixmap pixmap = QPixmap::fromImage(qImage);
         imageLabel->setPixmap(pixmap.scaled(640, 640, Qt::KeepAspectRatio, Qt::SmoothTransformation));
     }
 }

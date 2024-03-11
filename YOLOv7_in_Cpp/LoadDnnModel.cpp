@@ -4,7 +4,7 @@ const char* class_names[] = { "package" };
 
 LoadDnnModel::LoadDnnModel()
 {
-
+	model_path = "weights\\best.onnx";
 }
 
 LoadDnnModel::~LoadDnnModel()
@@ -22,25 +22,25 @@ tuple<Array, Shape, cv::Mat> LoadDnnModel::Read_Image(const string& path, int si
     Array array(nchw.ptr<float>(), nchw.ptr<float>() + nchw.total());
     return { array, shape, image };
 }
-
+void LoadDnnModel::SetImgPath(string path) {
+	image_path = path;
+}
+void LoadDnnModel::Run() {
+	tuple<Array, Shape, cv::Mat> temp = Read_Image(image_path, 640);
+	pair<Array, Shape> temp2 = process_image(session_, std::get<0>(temp), std::get<1>(temp));
+	auto image = cv::imread(image_path);
+	display_image(image, temp2.first, temp2.second);
+}
 void LoadDnnModel::LoadOnnx()
 {
 	//model_path 형식맞춰주기
-	std::string sPath = model_path;
-	wchar_t* wPath = new wchar_t[sPath.length() + 1];
-	std::copy(sPath.begin(), sPath.end(), wPath);
-	wPath[sPath.length()] = 0;
+	wchar_t* wPath = new wchar_t[model_path.length() + 1];
+	copy(model_path.begin(), model_path.end(), wPath);
+	wPath[model_path.length()] = 0;
 
 	session_ = new Ort::Session(env, wPath, Ort::SessionOptions{ nullptr });
 
 	delete[] wPath;
-
-	//test
-	tuple<Array, Shape, cv::Mat> temp = Read_Image(image_path, 640);
-	pair<Array, Shape> temp2 = process_image(session_, std::get<0>(temp), std::get<1>(temp));
-	auto image = cv::imread(image_path);
-	cv::resize(image, image, { 640, 640 });
-	display_image(image, temp2.first, temp2.second);
 
 
 }
@@ -60,20 +60,30 @@ pair<Array, Shape> LoadDnnModel::process_image(Ort::Session* session, Array& arr
 }
 void LoadDnnModel::display_image(cv::Mat image, const Array& output, const Shape& shape)
 {
+	// 이미지 리사이즈 비율 계산
+	float resize_factor_x = image.cols / 640.0f;
+	float resize_factor_y = image.rows / 640.0f;
 	for (size_t i = 0; i < shape[0]; ++i)
 	{
 		auto ptr = output.data() + i * shape[1];
-		int x = ptr[1], y = ptr[2], w = ptr[3] - x, h = ptr[4] - y, c = ptr[5];
+		// 바운딩 박스 좌표와 크기를 이미지 리사이즈 비율에 맞게 조정
+		int x = static_cast<int>(ptr[1] * resize_factor_x);
+		int y = static_cast<int>(ptr[2] * resize_factor_y);
+		int w = static_cast<int>((ptr[3] - ptr[1]) * resize_factor_x);
+		int h = static_cast<int>((ptr[4] - ptr[2]) * resize_factor_y);
+		int c = ptr[5];
 		auto color = CV_RGB(0, 255, 0);
 		auto name = std::string(class_names[c]) + ":" + std::to_string(int(ptr[6] * 100)) + "%";
 		cv::rectangle(image, { x, y, w, h }, color);
 		cv::putText(image, name, { x, y }, cv::FONT_HERSHEY_DUPLEX, 1, color);
 	}
-
-	cv::imshow("YOLOv7 Output", image);
-	cv::waitKey(0);
+	resultImage = image;
+	/*cv::imshow("YOLOv7 Output", image);
+	cv::waitKey(0);*/
 }
-
+cv::Mat LoadDnnModel::GetResultImage() {
+	return resultImage;
+}
 void LoadDnnModel::drawPred(float conf, int left, int top, int right, int bottom, cv::Mat& frame, int classid)   // Draw the predicted bounding box
 {
     //Draw a rectangle displaying the bounding box
